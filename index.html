@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<title>Orientačné ceny energií</title>
+<style>
+  :root{
+    --bg: #0a0d14;
+    --panel: #12161f;
+    --panel-border: #232838;
+    --text: #eef1f6;
+    --text-dim: #8a92a6;
+    --elektrina: #4d9fef;
+    --elektrina-soft: rgba(77,159,239,0.22);
+    --plyn: #f0d33d;
+    --plyn-soft: rgba(240,211,61,0.20);
+    --title-box: #05060a;
+  }
+
+  *{ box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  html, body{
+    margin:0; padding:0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+    min-height: 100vh;
+  }
+
+  body{
+    display:flex;
+    justify-content:center;
+  }
+
+  .screen{
+    width:100%;
+    max-width:430px;
+    min-height:100vh;
+    padding: env(safe-area-inset-top,0) 18px calc(env(safe-area-inset-bottom,0) + 24px);
+    display:flex;
+    flex-direction:column;
+  }
+
+  header{
+    padding: 22px 2px 18px;
+  }
+
+  .title-box{
+    background: var(--title-box);
+    border: 1px solid var(--panel-border);
+    border-radius: 16px;
+    padding: 16px 18px;
+    text-align: center;
+  }
+
+  h1{
+    font-size: 22px;
+    line-height: 1.28;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    margin: 0;
+    background: linear-gradient(90deg, var(--elektrina), var(--plyn));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .controls{
+    display:flex;
+    gap:10px;
+    margin-bottom: 18px;
+  }
+
+  .field{
+    flex:1;
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 14px;
+    padding: 10px 12px 11px;
+  }
+
+  .field label{
+    display:block;
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-bottom: 4px;
+  }
+
+  .field select{
+    width:100%;
+    background: transparent;
+    border: none;
+    color: var(--text);
+    font-size: 16px;
+    font-weight: 600;
+    font-family: inherit;
+    -webkit-appearance: none;
+    appearance: none;
+    padding: 2px 20px 2px 0;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><path d='M0 0L5 6L10 0Z' fill='%238a92a6'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 2px center;
+  }
+
+  .field select:focus{ outline: none; }
+  .field select:focus-visible{ outline: 2px solid var(--text-dim); border-radius: 4px; }
+
+  .cards{
+    display:flex;
+    flex-direction:column;
+    gap: 14px;
+  }
+
+  .card{
+    border-radius: 20px;
+    border: 1px solid;
+    padding: 18px 18px 20px;
+    position: relative;
+    overflow:hidden;
+  }
+
+  .card.elektrina{
+    background: linear-gradient(160deg, rgba(77,159,239,0.34), rgba(77,159,239,0.08) 55%, var(--panel) 88%);
+    border-color: rgba(77,159,239,0.6);
+  }
+
+  .card.plyn{
+    background: linear-gradient(160deg, rgba(240,211,61,0.30), rgba(240,211,61,0.07) 55%, var(--panel) 88%);
+    border-color: rgba(240,211,61,0.6);
+  }
+
+  .card-top{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-bottom: 14px;
+  }
+
+  .dot{
+    width:8px; height:8px; border-radius:50%;
+  }
+  .elektrina .dot{ background: var(--elektrina); }
+  .plyn .dot{ background: var(--plyn); }
+
+  .card-label{
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .elektrina .card-label{ color: var(--elektrina); }
+  .plyn .card-label{ color: var(--plyn); }
+
+  .max-badge{
+    margin-left: auto;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    padding: 3px 9px;
+    border-radius: 999px;
+    border: 1px solid;
+  }
+  .elektrina .max-badge{ color: var(--elektrina); border-color: rgba(77,159,239,0.6); }
+  .plyn .max-badge{ color: var(--plyn); border-color: rgba(240,211,61,0.6); }
+
+  .price-row{
+    display:flex;
+    align-items:baseline;
+    gap:8px;
+    margin-bottom: 6px;
+  }
+
+  .price{
+    font-size: 44px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+  }
+  .elektrina .price{ color: var(--elektrina); }
+  .plyn .price{ color: var(--plyn); }
+
+  .unit{
+    font-size: 15px;
+    color: var(--text-dim);
+    font-weight: 500;
+  }
+
+  .period{
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  footer{
+    margin-top: auto;
+    padding-top: 22px;
+    text-align:center;
+  }
+
+  footer p{
+    font-size: 14px;
+    color: var(--text-dim);
+    margin:0;
+    line-height:1.5;
+  }
+</style>
+</head>
+<body>
+<div class="screen">
+
+  <header>
+    <div class="title-box">
+      <h1>Orientačné ceny energií</h1>
+    </div>
+  </header>
+
+  <div class="controls">
+    <div class="field">
+      <label for="years">Počet rokov</label>
+      <select id="years">
+        <option value="1">1 rok</option>
+        <option value="2">2 roky</option>
+        <option value="3">3 roky</option>
+        <option value="4">4 roky</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="startYear">Rok začiatku</label>
+      <select id="startYear"></select>
+    </div>
+  </div>
+
+  <div class="cards">
+    <div class="card elektrina">
+      <div class="card-top">
+        <span class="dot"></span>
+        <span class="card-label">Elektrina</span>
+        <span class="max-badge">MAX</span>
+      </div>
+      <div class="price-row">
+        <span class="price" id="elektrinaPrice">–</span>
+        <span class="unit">€/MWh</span>
+      </div>
+      <div class="period" id="elektrinaPeriod">—</div>
+    </div>
+
+    <div class="card plyn">
+      <div class="card-top">
+        <span class="dot"></span>
+        <span class="card-label">Plyn</span>
+        <span class="max-badge">MAX</span>
+      </div>
+      <div class="price-row">
+        <span class="price" id="plynPrice">–</span>
+        <span class="unit">€/MWh</span>
+      </div>
+      <div class="period" id="plynPeriod">—</div>
+    </div>
+  </div>
+
+  <footer>
+    <p>Ceny sú orientačné, platné 2 dni. Rozsah rokov je vždy v intervale 2027–2030.</p>
+  </footer>
+
+</div>
+
+<script>
+  // Predajné ceny energií — MWM (A19:J20 elektrina, A25:J26 plyn)
+  var DATA = {
+    elektrina: { 2027: 152.65, 2028: 121.55, 2029: 109.30, 2030: 99.90 },
+    plyn:      { 2027: 68.25,  2028: 48.05,  2029: 38.85,  2030: 34.50 }
+  };
+
+  var MIN_YEAR = 2027, MAX_YEAR = 2030;
+
+  var yearsSelect = document.getElementById('years');
+  var startYearSelect = document.getElementById('startYear');
+
+  function fmt(n){
+    return n.toFixed(2).replace('.', ',');
+  }
+
+  function average(commodity, start, span){
+    var sum = 0;
+    for (var y = start; y < start + span; y++){ sum += DATA[commodity][y]; }
+    return sum / span;
+  }
+
+  function populateStartYears(){
+    var span = parseInt(yearsSelect.value, 10);
+    var prevValue = startYearSelect.value ? parseInt(startYearSelect.value, 10) : null;
+    var lastPossibleStart = MAX_YEAR - span + 1;
+
+    startYearSelect.innerHTML = '';
+    for (var y = MIN_YEAR; y <= lastPossibleStart; y++){
+      var opt = document.createElement('option');
+      opt.value = y;
+      opt.textContent = 'Rok ' + y;
+      startYearSelect.appendChild(opt);
+    }
+
+    if (prevValue && prevValue >= MIN_YEAR && prevValue <= lastPossibleStart){
+      startYearSelect.value = prevValue;
+    }
+  }
+
+  function render(){
+    var span = parseInt(yearsSelect.value, 10);
+    var start = parseInt(startYearSelect.value, 10);
+    var end = start + span - 1;
+
+    var elPrice = average('elektrina', start, span);
+    var plPrice = average('plyn', start, span);
+
+    document.getElementById('elektrinaPrice').textContent = fmt(elPrice);
+    document.getElementById('plynPrice').textContent = fmt(plPrice);
+
+    var periodLabel = (span === 1) ? ('Rok ' + start) : ('Priemer ' + start + '–' + end);
+    document.getElementById('elektrinaPeriod').textContent = periodLabel;
+    document.getElementById('plynPeriod').textContent = periodLabel;
+  }
+
+  yearsSelect.addEventListener('change', function(){
+    populateStartYears();
+    render();
+  });
+  startYearSelect.addEventListener('change', render);
+
+  populateStartYears();
+  render();
+</script>
+
+</body>
+</html>
