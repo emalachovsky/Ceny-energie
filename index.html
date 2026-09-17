@@ -51,19 +51,54 @@
     border: 1px solid var(--panel-border);
     border-radius: 16px;
     padding: 16px 18px;
-    text-align: center;
+    display: grid;
+    grid-template-columns: 34px 1fr 34px;
+    align-items: center;
   }
 
   h1{
+    grid-column: 2;
     font-size: 22px;
     line-height: 1.28;
     font-weight: 800;
     letter-spacing: -0.01em;
     margin: 0;
+    text-align: center;
     background: linear-gradient(90deg, var(--elektrina), var(--plyn));
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
+  }
+
+  .refresh-btn{
+    grid-column: 3;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 1px solid var(--panel-border);
+    background: var(--panel);
+    color: var(--text-dim);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size: 16px;
+    cursor: pointer;
+    padding: 0;
+  }
+
+  .refresh-btn:active{ transform: scale(0.92); }
+  .refresh-btn.loading{ animation: spin 0.8s linear infinite; }
+
+  @keyframes spin{
+    from{ transform: rotate(0deg); }
+    to{ transform: rotate(360deg); }
+  }
+
+  .status-line{
+    text-align:center;
+    font-size: 12px;
+    color: var(--text-dim);
+    margin: 8px 0 0;
   }
 
   .controls{
@@ -210,7 +245,9 @@
   <header>
     <div class="title-box">
       <h1>Orientačné ceny energií</h1>
+      <button class="refresh-btn" id="refreshBtn" aria-label="Aktualizovať ceny" title="Aktualizovať ceny">⟳</button>
     </div>
+    <p class="status-line" id="statusLine">Načítavam aktuálne ceny…</p>
   </header>
 
   <div class="controls">
@@ -265,18 +302,101 @@
 
 <script>
   // Predajné ceny energií — MWM (A19:J20 elektrina, A25:J26 plyn)
+  // Statické záložné hodnoty — použijú sa, ak sa nepodarí načítať aktuálne dáta z tabuľky.
   var DATA = {
     elektrina: { 2027: 152.65, 2028: 121.55, 2029: 109.30, 2030: 99.90 },
     plyn:      { 2027: 68.25,  2028: 48.05,  2029: 38.85,  2030: 34.50 }
   };
 
+  var SHEET_ID = '1yjOl0-yYSOI2lTCxflBfZWiohGkQmJkMVJLIlxGBUdU';
+  var SHEET_GID = '1494981420';
+
   var MIN_YEAR = 2027, MAX_YEAR = 2030;
 
   var yearsSelect = document.getElementById('years');
   var startYearSelect = document.getElementById('startYear');
+  var refreshBtn = document.getElementById('refreshBtn');
+  var statusLine = document.getElementById('statusLine');
 
   function fmt(n){
     return n.toFixed(2).replace('.', ',');
+  }
+
+  function parseNum(str){
+    str = (str || '').trim().replace(/^"|"$/g, '');
+    if (/^-?\d+,\d+$/.test(str)) return parseFloat(str.replace(',', '.'));
+    return parseFloat(str.replace(/,/g, ''));
+  }
+
+  function parseCSV(text){
+    var rows = [];
+    var row = [], cur = '', inQuotes = false;
+    for (var i = 0; i < text.length; i++){
+      var c = text[i];
+      if (inQuotes){
+        if (c === '"'){
+          if (text[i+1] === '"'){ cur += '"'; i++; } else { inQuotes = false; }
+        } else { cur += c; }
+      } else {
+        if (c === '"') inQuotes = true;
+        else if (c === ','){ row.push(cur); cur = ''; }
+        else if (c === '\n' || c === '\r'){
+          if (cur !== '' || row.length){ row.push(cur); rows.push(row); row = []; cur = ''; }
+        } else { cur += c; }
+      }
+    }
+    if (cur !== '' || row.length){ row.push(cur); rows.push(row); }
+    return rows;
+  }
+
+  function fetchRange(range){
+    var url = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID +
+      '/gviz/tq?tqx=out:csv&gid=' + SHEET_GID + '&range=' + range;
+    return fetch(url).then(function(res){
+      if (!res.ok) throw new Error('network ' + res.status);
+      return res.text();
+    }).then(parseCSV);
+  }
+
+  function nowTime(){
+    var d = new Date();
+    function pad(n){ return (n < 10 ? '0' : '') + n; }
+    return pad(d.getHours()) + ':' + pad(d.getMinutes());
+  }
+
+  function setStatus(text){
+    statusLine.textContent = text;
+  }
+
+  function loadLiveData(){
+    refreshBtn.classList.add('loading');
+    setStatus('Načítavam aktuálne ceny…');
+
+    Promise.all([ fetchRange('A19:J20'), fetchRange('A25:J26') ])
+      .then(function(results){
+        var elRow = results[0][1];
+        var plRow = results[1][1];
+
+        DATA.elektrina[2027] = parseNum(elRow[1]);
+        DATA.elektrina[2028] = parseNum(elRow[2]);
+        DATA.elektrina[2029] = parseNum(elRow[3]);
+        DATA.elektrina[2030] = parseNum(elRow[4]);
+
+        DATA.plyn[2027] = parseNum(plRow[1]);
+        DATA.plyn[2028] = parseNum(plRow[2]);
+        DATA.plyn[2029] = parseNum(plRow[3]);
+        DATA.plyn[2030] = parseNum(plRow[4]);
+
+        render();
+        setStatus('Aktualizované ' + nowTime());
+      })
+      .catch(function(){
+        render();
+        setStatus('Nepodarilo sa načítať, zobrazené posledné známe ceny');
+      })
+      .finally(function(){
+        refreshBtn.classList.remove('loading');
+      });
   }
 
   function average(commodity, start, span){
@@ -324,9 +444,11 @@
     render();
   });
   startYearSelect.addEventListener('change', render);
+  refreshBtn.addEventListener('click', loadLiveData);
 
   populateStartYears();
   render();
+  loadLiveData();
 </script>
 
 </body>
