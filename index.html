@@ -162,7 +162,7 @@
   .card{
     border-radius: 20px;
     border: 1px solid;
-    padding: 12px 16px 13px;
+    padding: 16px 18px 22px;
     position: relative;
     overflow:hidden;
   }
@@ -181,7 +181,7 @@
     display:flex;
     align-items:center;
     gap:10px;
-    margin-bottom: 8px;
+    margin-bottom: 12px;
   }
 
   .icon{
@@ -217,16 +217,23 @@
     background: rgba(240,211,61,0.1);
   }
 
-  /* Cena + rok vedľa seba na jednom riadku */
+  /* Cena uprostred, obdobie pod ňou */
   .price-row{
+    display:flex;
+    flex-direction: column;
+    align-items:center;
+    text-align:center;
+    gap:4px;
+  }
+
+  .price-main{
     display:flex;
     align-items:baseline;
     gap:8px;
-    flex-wrap:nowrap;
   }
 
   .price{
-    font-size: 26px;
+    font-size: 42px;
     font-weight: 700;
     letter-spacing: -0.02em;
     font-variant-numeric: tabular-nums;
@@ -235,20 +242,17 @@
   .plyn .price{ color: var(--plyn); }
 
   .unit{
-    font-size: 12px;
+    font-size: 15px;
     color: var(--text-dim);
     font-weight: 500;
   }
 
-  /* Obdobie (rok/priemer) — teraz vpravo od ceny, zarovnané na baseline */
+  /* Obdobie (rok/priemer) — centrované pod cenou */
   .period{
-    font-size: 13px;
+    font-size: 15px;
     font-weight: 700;
     color: var(--text);
-    margin-left: auto;
     white-space: nowrap;
-    align-self: flex-end;
-    padding-bottom: 3px;
   }
 
   footer{
@@ -299,8 +303,10 @@
         <span class="max-badge">MAX CENA</span>
       </div>
       <div class="price-row">
-        <span class="price" id="elektrinaPrice">–</span>
-        <span class="unit">€/MWh</span>
+        <div class="price-main">
+          <span class="price" id="elektrinaPrice">–</span>
+          <span class="unit">€/MWh</span>
+        </div>
         <span class="period" id="elektrinaPeriod">—</span>
       </div>
     </div>
@@ -312,8 +318,10 @@
         <span class="max-badge">MAX CENA</span>
       </div>
       <div class="price-row">
-        <span class="price" id="plynPrice">–</span>
-        <span class="unit">€/MWh</span>
+        <div class="price-main">
+          <span class="price" id="plynPrice">–</span>
+          <span class="unit">€/MWh</span>
+        </div>
         <span class="period" id="plynPeriod">—</span>
       </div>
     </div>
