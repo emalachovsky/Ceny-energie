@@ -372,7 +372,7 @@
     refreshBtn.classList.add('loading');
     setStatus('Načítavam aktuálne ceny…');
 
-    Promise.all([ fetchRange('A19:J20'), fetchRange('A25:J26') ])
+    Promise.all([ fetchRange('A6:J7'), fetchRange('A12:J13') ])
       .then(function(results){
         var elRow = results[0][1];
         var plRow = results[1][1];
